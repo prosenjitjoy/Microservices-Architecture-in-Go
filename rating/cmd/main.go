@@ -7,11 +7,17 @@ import (
 	"log"
 	"main/discovery"
 	"main/discovery/consul"
-	"main/rating/controller/rating"
-	httphandler "main/rating/handler/http"
+	"main/rating/controller"
+	grpchandler "main/rating/handler/grpc"
+	"main/rpc"
+	"net"
+
+	// "main/rating/handler/api"
 	"main/rating/repository/memory"
-	"net/http"
 	"time"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 const serviceName = "rating"
@@ -45,10 +51,23 @@ func main() {
 	defer registry.Deregister(ctx, instanceID, serviceName)
 
 	repo := memory.New()
-	svc := rating.New(repo)
-	h := httphandler.New(svc)
-	http.Handle("/rating", http.HandlerFunc(h.Handle))
-	if err := http.ListenAndServe(hostPort, nil); err != nil {
-		log.Fatal("Failed to start the server:", err)
+	svc := controller.New(repo)
+	// h := api.New(svc)
+	// http.Handle("/rating", http.HandlerFunc(h.Handle))
+	// if err := http.ListenAndServe(hostPort, nil); err != nil {
+	// 	log.Fatal("Failed to start the server:", err)
+	// }
+
+	h := grpchandler.New(svc)
+	listener, err := net.Listen("tcp", hostPort)
+	if err != nil {
+		log.Fatalf("failed to listen on %s: %v", hostPort, err)
+	}
+
+	server := grpc.NewServer()
+	reflection.Register(server)
+	rpc.RegisterRatingServiceServer(server, h)
+	if err := server.Serve(listener); err != nil {
+		log.Fatal("Failed to start gRPC server:", err)
 	}
 }

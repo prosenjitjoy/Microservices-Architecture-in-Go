@@ -1,4 +1,4 @@
-package movie
+package controller
 
 import (
 	"context"
@@ -21,22 +21,22 @@ type metadataGateway interface {
 	Get(ctx context.Context, id string) (*metadatamodel.Metadata, error)
 }
 
-// Controller defines a movie service controller.
-type Controller struct {
+// MovieService defines a movie service controller.
+type MovieService struct {
 	ratingGateway   ratingGateway
 	metadataGateway metadataGateway
 }
 
 // New creates a new movie service controller.
-func New(ratingGateway ratingGateway, metadataGateway metadataGateway) *Controller {
-	return &Controller{
+func New(ratingGateway ratingGateway, metadataGateway metadataGateway) *MovieService {
+	return &MovieService{
 		ratingGateway:   ratingGateway,
 		metadataGateway: metadataGateway,
 	}
 }
 
 // Get returns the movie details including the aggregated rating and movie metadata.
-func (c *Controller) Get(ctx context.Context, id string) (*model.MovieDetails, error) {
+func (c *MovieService) Get(ctx context.Context, id string) (*model.MovieDetails, error) {
 	metadata, err := c.metadataGateway.Get(ctx, id)
 	if err != nil && errors.Is(err, gateway.ErrNotFound) {
 		return nil, ErrNotFound

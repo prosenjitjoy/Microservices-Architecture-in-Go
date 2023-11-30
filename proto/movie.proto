@@ -6,7 +6,7 @@ package rpc;
 import "metadata.proto";
 
 message MovieDetails {
-  float rating = 1;
+  double rating = 1;
   Metadata metadata = 2;
 }
 
