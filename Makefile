@@ -5,4 +5,8 @@ delete-consul:
 	podman rm -f dev-consul
 	podman volume prune
 
-.PHONY: create-consul delete-consul
+proto-generate:
+	rm -rf rpc/*
+	protoc --proto_path=proto --go_out=rpc --go_opt=paths=source_relative --go-grpc_out=rpc --go-grpc_opt=paths=source_relative proto/*.proto
+
+.PHONY: create-consul delete-consul proto-generate

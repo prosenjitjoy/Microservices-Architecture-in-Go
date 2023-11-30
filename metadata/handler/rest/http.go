@@ -1,10 +1,10 @@
-package handler
+package rest
 
 import (
 	"encoding/json"
 	"errors"
 	"log"
-	"main/metadata/controller/metadata"
+	"main/metadata/controller"
 	"main/metadata/model"
 	"main/metadata/repository"
 	"net/http"
@@ -12,11 +12,11 @@ import (
 
 // Handler defines a movie metadata HTTP handler.
 type Handler struct {
-	ctrl *metadata.Controller
+	ctrl *controller.MetadataService
 }
 
 // New creates a new movie metadata HTTP handler.
-func New(ctrl *metadata.Controller) *Handler {
+func New(ctrl *controller.MetadataService) *Handler {
 	return &Handler{
 		ctrl: ctrl,
 	}

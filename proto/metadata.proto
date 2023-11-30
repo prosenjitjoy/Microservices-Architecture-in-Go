@@ -1,0 +1,30 @@
+syntax = "proto3";
+option go_package = "main/rpc";
+
+package rpc;
+
+message Metadata {
+  string movie_id = 1;
+  string title = 2;
+  string description = 3;
+  string director = 4;
+}
+
+message GetMetadataRequest {
+  string movie_id = 1;
+}
+
+message GetMetadataResponse {
+  Metadata metadata = 1;
+}
+
+message PutMetadataRequest {
+  Metadata metadata = 1;
+}
+
+message PutMetadataResponse {}
+
+service MetadataService {
+  rpc GetMetadata(GetMetadataRequest) returns(GetMetadataResponse) {}
+  rpc PutMetadata(PutMetadataRequest) returns(PutMetadataResponse) {}
+}
