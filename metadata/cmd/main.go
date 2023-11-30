@@ -8,10 +8,16 @@ import (
 	"main/discovery"
 	"main/discovery/consul"
 	"main/metadata/controller"
-	"main/metadata/handler/rest"
+	grpchandler "main/metadata/handler/grpc"
+	"main/rpc"
+
+	// "main/metadata/handler/api"
 	"main/metadata/repository/memory"
-	"net/http"
+	"net"
 	"time"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 const serviceName = "metadata"
@@ -46,9 +52,23 @@ func main() {
 
 	repo := memory.New()
 	svc := controller.New(repo)
-	h := rest.New(svc)
-	http.Handle("/metadata", http.HandlerFunc(h.Handle))
-	if err := http.ListenAndServe(hostPort, nil); err != nil {
-		log.Fatal("Failed to start the server:", err)
+
+	// h := api.New(svc)
+	// http.Handle("/metadata", http.HandlerFunc(h.Handle))
+	// if err := http.ListenAndServe(hostPort, nil); err != nil {
+	// 	log.Fatal("Failed to start the server:", err)
+	// }
+
+	h := grpchandler.New(svc)
+	listener, err := net.Listen("tcp", hostPort)
+	if err != nil {
+		log.Fatalf("failed to listen on %s: %v", hostPort, err)
+	}
+
+	server := grpc.NewServer()
+	reflection.Register(server)
+	rpc.RegisterMetadataServiceServer(server, h)
+	if err := server.Serve(listener); err != nil {
+		log.Fatal("Failed to start gRPC server:", err)
 	}
 }
