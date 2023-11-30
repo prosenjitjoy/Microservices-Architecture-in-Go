@@ -1,0 +1,27 @@
+syntax = "proto3";
+option go_package = "main/rpc";
+
+package rpc;
+
+message GetAggregatedRatingRequest {
+  string record_id = 1;
+  string record_type = 2;
+}
+
+message GetAggregatedRatingResponse {
+  float rating_value = 1;
+}
+
+message PutRatingRequest {
+  string user_id = 1;
+  string record_id = 2;
+  int32 record_type = 3;
+  int32 rating_value = 4;
+}
+
+message PutRatingResponse {}
+
+service RatingService {
+  rpc GetAggregatedRating(GetAggregatedRatingRequest) returns(GetAggregatedRatingResponse) {}
+  rpc PutRating(PutRatingRequest) returns(PutRatingResponse) {}
+}

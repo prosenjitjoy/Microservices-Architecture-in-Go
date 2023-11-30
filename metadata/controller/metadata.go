@@ -1,4 +1,4 @@
-package metadata
+package controller
 
 import (
 	"context"
@@ -15,19 +15,19 @@ type metadataRepository interface {
 	Put(ctx context.Context, id string, metadata *model.Metadata) error
 }
 
-// Controller defines a metadata service controller.
-type Controller struct {
+// MetadataService defines a metadata service controller.
+type MetadataService struct {
 	repo metadataRepository
 }
 
 // New creates a metadata service controller.
-func New(repo metadataRepository) *Controller {
-	return &Controller{
+func New(repo metadataRepository) *MetadataService {
+	return &MetadataService{
 		repo: repo,
 	}
 }
 
-func (c *Controller) GetMetadata(ctx context.Context, id string) (*model.Metadata, error) {
+func (c *MetadataService) GetMetadata(ctx context.Context, id string) (*model.Metadata, error) {
 	res, err := c.repo.Get(ctx, id)
 	if err != nil && errors.Is(err, repository.ErrNotFound) {
 		return nil, ErrNotFound
@@ -35,6 +35,6 @@ func (c *Controller) GetMetadata(ctx context.Context, id string) (*model.Metadat
 	return res, err
 }
 
-func (c *Controller) PutMetadata(ctx context.Context, id string, metadata *model.Metadata) error {
+func (c *MetadataService) PutMetadata(ctx context.Context, id string, metadata *model.Metadata) error {
 	return c.repo.Put(ctx, id, metadata)
 }

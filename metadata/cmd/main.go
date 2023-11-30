@@ -7,8 +7,8 @@ import (
 	"log"
 	"main/discovery"
 	"main/discovery/consul"
-	"main/metadata/controller/metadata"
-	httphandler "main/metadata/handler/http"
+	"main/metadata/controller"
+	"main/metadata/handler/rest"
 	"main/metadata/repository/memory"
 	"net/http"
 	"time"
@@ -45,8 +45,8 @@ func main() {
 	defer registry.Deregister(ctx, instanceID, serviceName)
 
 	repo := memory.New()
-	svc := metadata.New(repo)
-	h := httphandler.New(svc)
+	svc := controller.New(repo)
+	h := rest.New(svc)
 	http.Handle("/metadata", http.HandlerFunc(h.Handle))
 	if err := http.ListenAndServe(hostPort, nil); err != nil {
 		log.Fatal("Failed to start the server:", err)

@@ -1,0 +1,23 @@
+syntax = "proto3";
+option go_package = "main/rpc";
+
+package rpc;
+
+import "metadata.proto";
+
+message MovieDetails {
+  float rating = 1;
+  Metadata metadata = 2;
+}
+
+message GetMovieDetailsRequest {
+  string movie_id = 1;
+}
+
+message GetMovieDetailsResponse {
+  MovieDetails movie_details = 1;
+}
+
+service MovieService {
+  rpc GetMovieDetails(GetMovieDetailsRequest) returns(GetMovieDetailsResponse) {}
+}
