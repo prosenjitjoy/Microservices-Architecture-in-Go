@@ -52,6 +52,12 @@ func main() {
 
 	repo := memory.New()
 	svc := controller.New(repo)
+
+	go func() {
+		if err := svc.StartConsume(ctx); err != nil {
+			log.Fatal(err)
+		}
+	}()
 	// h := api.New(svc)
 	// http.Handle("/rating", http.HandlerFunc(h.Handle))
 	// if err := http.ListenAndServe(hostPort, nil); err != nil {

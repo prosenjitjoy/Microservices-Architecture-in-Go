@@ -2,9 +2,14 @@ package controller
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"main/rating/model"
 	"main/rating/repository"
+	"main/utils"
+
+	"github.com/apache/pulsar-client-go/pulsar"
 )
 
 // ErrNotFound is returned when no ratings are found for a record.
@@ -28,8 +33,8 @@ func New(repo ratingRepository) *RatingService {
 }
 
 // GetAggregatedRating returns the aggregated rating for a record or ErrNotFound if there are no ratings for it.
-func (c *RatingService) GetAggregatedRating(ctx context.Context, recordID model.RecordID, recordType model.RecordType) (float64, error) {
-	ratings, err := c.repo.Get(ctx, recordID, recordType)
+func (s *RatingService) GetAggregatedRating(ctx context.Context, recordID model.RecordID, recordType model.RecordType) (float64, error) {
+	ratings, err := s.repo.Get(ctx, recordID, recordType)
 	if err != nil && errors.Is(err, repository.ErrNotFound) {
 		return 0, ErrNotFound
 	} else if err != nil {
@@ -43,6 +48,58 @@ func (c *RatingService) GetAggregatedRating(ctx context.Context, recordID model.
 }
 
 // PutRating writes a rating for a given record
-func (c *RatingService) PutRating(ctx context.Context, recordID model.RecordID, recordType model.RecordType, rating *model.Rating) error {
-	return c.repo.Put(ctx, recordID, recordType, rating)
+func (s *RatingService) PutRating(ctx context.Context, recordID model.RecordID, recordType model.RecordType, rating *model.Rating) error {
+	return s.repo.Put(ctx, recordID, recordType, rating)
+}
+
+// StartConsume starts consuming the rating events.
+func (s *RatingService) StartConsume(ctx context.Context) error {
+	cfg := utils.LoadConfig()
+
+	client, err := pulsar.NewClient(pulsar.ClientOptions{
+		URL:               cfg.PulsarURL,
+		ConnectionTimeout: cfg.ConnectionTimeout,
+		OperationTimeout:  cfg.OperationTimeout,
+	})
+	if err != nil {
+		return err
+	}
+	defer client.Close()
+
+	channel := make(chan pulsar.ConsumerMessage, 100)
+
+	options := pulsar.ConsumerOptions{
+		Topic:            cfg.TopicName,
+		SubscriptionName: cfg.SubscriberName,
+		Type:             pulsar.Exclusive,
+		MessageChannel:   channel,
+	}
+
+	consumer, err := client.Subscribe(options)
+	if err != nil {
+		return err
+	}
+	defer consumer.Close()
+
+	for cm := range channel {
+		consumer := cm.Consumer
+		msg := cm.Message
+		fmt.Printf("Consumer %s received a message, msgId: %v, content: %s\n", consumer.Name(), msg.ID(), string(msg.Payload()))
+
+		var event model.RatingEvent
+		if err := json.Unmarshal(msg.Payload(), &event); err != nil {
+			return err
+		}
+
+		if err := s.PutRating(ctx, event.RecordID, event.RecordType, &model.Rating{
+			UserID: event.UserID,
+			Value:  event.Value,
+		}); err != nil {
+			return err
+		}
+
+		consumer.Ack(msg)
+	}
+
+	return nil
 }
