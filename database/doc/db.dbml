@@ -1,0 +1,23 @@
+Project Microservice {
+  database_type: 'PostgreSQL'
+  Note: '# MovieDB database'
+}
+
+Table movies {
+  id text [pk]
+  title text [not null, unique]
+  description text [not null]
+  director text [not null]
+}
+
+Table ratings {
+  id bigserial [pk]
+  movie_id text [not null]
+  record_type text [not null]
+  user_id text [not null]
+  value integer [not null]
+
+  Indexes {
+    (movie_id, record_type)
+  }
+}

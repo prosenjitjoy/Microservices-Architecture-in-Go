@@ -23,12 +23,14 @@ type ratingRepository interface {
 // RatingService defines a rating service controller.
 type RatingService struct {
 	repo ratingRepository
+	cfg  *utils.ConfigDatabase
 }
 
 // New creates a rating service controller.
-func New(repo ratingRepository) *RatingService {
+func New(repo ratingRepository, config *utils.ConfigDatabase) *RatingService {
 	return &RatingService{
 		repo: repo,
+		cfg:  config,
 	}
 }
 
@@ -54,12 +56,10 @@ func (s *RatingService) PutRating(ctx context.Context, recordID model.RecordID, 
 
 // StartConsume starts consuming the rating events.
 func (s *RatingService) StartConsume(ctx context.Context) error {
-	cfg := utils.LoadConfig()
-
 	client, err := pulsar.NewClient(pulsar.ClientOptions{
-		URL:               cfg.PulsarURL,
-		ConnectionTimeout: cfg.ConnectionTimeout,
-		OperationTimeout:  cfg.OperationTimeout,
+		URL:               s.cfg.PulsarURL,
+		ConnectionTimeout: s.cfg.ConnectionTimeout,
+		OperationTimeout:  s.cfg.OperationTimeout,
 	})
 	if err != nil {
 		return err
@@ -69,8 +69,8 @@ func (s *RatingService) StartConsume(ctx context.Context) error {
 	channel := make(chan pulsar.ConsumerMessage, 100)
 
 	options := pulsar.ConsumerOptions{
-		Topic:            cfg.TopicName,
-		SubscriptionName: cfg.SubscriberName,
+		Topic:            s.cfg.TopicName,
+		SubscriptionName: s.cfg.SubscriberName,
 		Type:             pulsar.Exclusive,
 		MessageChannel:   channel,
 	}

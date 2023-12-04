@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"main/rating/model"
@@ -13,7 +14,12 @@ import (
 )
 
 func main() {
-	cfg := utils.LoadConfig()
+	var config string
+	var data string
+	flag.StringVar(&config, "config", ".env", "Configuration path")
+	flag.StringVar(&data, "data", "data.json", "Load Rating data")
+	flag.Parse()
+	cfg := utils.LoadConfig(config)
 
 	client, err := pulsar.NewClient(pulsar.ClientOptions{
 		URL:               cfg.PulsarURL,
@@ -35,10 +41,8 @@ func main() {
 	}
 	defer producer.Close()
 
-	const fileName = "ratingsdata.json"
-	fmt.Println("Reading rating events from file", fileName)
-
-	ratingEvents, err := readRatingEvents(fileName)
+	fmt.Println("Reading rating events from file:", data)
+	ratingEvents, err := readRatingEvents(data)
 	if err != nil {
 		log.Fatal("failed to read events from file:", err)
 	}

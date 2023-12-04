@@ -27,10 +27,10 @@ func (r *Repository) Get(ctx context.Context, recordID model.RecordID, recordTyp
 }
 
 // Put adds a rating for a given record.
-func (r *Repository) Put(ctx context.Context, recordID model.RecordID, recortType model.RecordType, rating *model.Rating) error {
-	if _, ok := r.data[recortType]; !ok {
-		r.data[recortType] = map[model.RecordID][]model.Rating{}
+func (r *Repository) Put(ctx context.Context, recordID model.RecordID, recordType model.RecordType, rating *model.Rating) error {
+	if _, ok := r.data[recordType]; !ok {
+		r.data[recordType] = map[model.RecordID][]model.Rating{}
 	}
-	r.data[recortType][recordID] = append(r.data[recortType][recordID], *rating)
+	r.data[recordType][recordID] = append(r.data[recordType][recordID], *rating)
 	return nil
 }
