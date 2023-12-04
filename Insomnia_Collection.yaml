@@ -1,0 +1,337 @@
+_type: export
+__export_format: 4
+__export_date: 2023-12-04T06:18:37.622Z
+__export_source: insomnia.desktop.app:v8.4.5
+resources:
+  - _id: greq_623e3faca6fd4fd89eba283e28e855ea
+    parentId: wrk_f284def60d5b4d4ebba992dcae9b9ec4
+    modified: 1701549308185
+    created: 1701549262859
+    url: localhost:8081
+    name: Put New Metadata 2
+    description: ""
+    protoFileId: ""
+    protoMethodName: /rpc.MetadataService/PutMetadata
+    metadata: []
+    body:
+      text: |-
+        {
+        	"metadata": {
+        		"movie_id": "2",
+        		"title": "the matrix 2",
+        		"description": "escape the matrix",
+        		"director": "The Wachowskis"
+        	}
+        }
+    metaSortKey: -1701549262859
+    isPrivate: false
+    _type: grpc_request
+  - _id: wrk_f284def60d5b4d4ebba992dcae9b9ec4
+    parentId: null
+    modified: 1701115182589
+    created: 1700769981544
+    name: MovieMicro
+    description: ""
+    scope: collection
+    _type: workspace
+  - _id: greq_8a49888becab403591842f5616f1b909
+    parentId: wrk_f284def60d5b4d4ebba992dcae9b9ec4
+    modified: 1701655916623
+    created: 1701385511420
+    url: localhost:8083
+    name: Get Movie Details
+    description: ""
+    protoFileId: ""
+    protoMethodName: /rpc.MovieService/GetMovieDetails
+    metadata: []
+    body:
+      text: |-
+        {
+        	"movie_id": "2"
+        }
+    metaSortKey: -1701385511420
+    isPrivate: false
+    _type: grpc_request
+  - _id: greq_5a2ab924b55542aea8e7a9c5066d7d0e
+    parentId: wrk_f284def60d5b4d4ebba992dcae9b9ec4
+    modified: 1701654515024
+    created: 1701385070781
+    url: localhost:8082
+    name: Put New Rating
+    description: ""
+    protoFileId: ""
+    protoMethodName: /rpc.RatingService/PutRating
+    metadata: []
+    body:
+      text: |-
+        {
+        	"user_id": "1",
+        	"record_id": "1",
+        	"record_type": "movie",
+        	"rating_value": 10
+        }
+    metaSortKey: -1701385070781
+    isPrivate: false
+    _type: grpc_request
+  - _id: greq_f1585a5c0eff4aecad7712379f384763
+    parentId: wrk_f284def60d5b4d4ebba992dcae9b9ec4
+    modified: 1701655320207
+    created: 1701384920669
+    url: localhost:8082
+    name: Get Aggregated Rating
+    description: ""
+    protoFileId: ""
+    protoMethodName: /rpc.RatingService/GetAggregatedRating
+    metadata: []
+    body:
+      text: |-
+        {
+        	"record_id": "2",
+        	"record_type": "movie"
+        }
+    metaSortKey: -1701384920670
+    isPrivate: false
+    _type: grpc_request
+  - _id: greq_d38cf7f3d983418a8933cdde7066a115
+    parentId: wrk_f284def60d5b4d4ebba992dcae9b9ec4
+    modified: 1701654469349
+    created: 1701384627949
+    url: localhost:8081
+    name: Put New Metadata
+    description: ""
+    protoFileId: ""
+    protoMethodName: /rpc.MetadataService/PutMetadata
+    metadata: []
+    body:
+      text: |-
+        {
+        	"metadata": {
+        		"movie_id": "1",
+        		"title": "the matrix",
+        		"description": "escape the matrix",
+        		"director": "The Wachowskis"
+        	}
+        }
+    metaSortKey: -1701384627949
+    isPrivate: false
+    _type: grpc_request
+  - _id: greq_967ea447d9c1419081c007577dbfa522
+    parentId: wrk_f284def60d5b4d4ebba992dcae9b9ec4
+    modified: 1701654453846
+    created: 1701384313440
+    url: localhost:8081
+    name: Get Movie Metadata
+    description: ""
+    protoFileId: ""
+    protoMethodName: /rpc.MetadataService/GetMetadata
+    metadata: []
+    body:
+      text: |-
+        {
+        	"movie_id": "1"
+        }
+    metaSortKey: -1701384313440
+    isPrivate: false
+    _type: grpc_request
+  - _id: req_7adc8fa74b7e46b2b61ccd6cfa491227
+    parentId: wrk_f284def60d5b4d4ebba992dcae9b9ec4
+    modified: 1701269355780
+    created: 1700956962995
+    url: localhost:8081/metadata
+    name: Put New Metadata
+    description: ""
+    method: PUT
+    body:
+      mimeType: multipart/form-data
+      params:
+        - description: ""
+          id: pair_8f004e4eeacd41b1ad6be693affe4652
+          name: id
+          value: "1"
+        - description: ""
+          id: pair_80ca7c52e1df487393111a0d74622b0c
+          name: title
+          value: the matrix
+        - description: ""
+          id: pair_9157ade90d6a467ab7c15d77251a7e86
+          name: description
+          value: escape the matrix
+        - description: ""
+          disabled: false
+          id: pair_71929799c8704978a924713aeafd2419
+          name: director
+          value: The Wachowskis
+    parameters: []
+    headers:
+      - name: Content-Type
+        value: multipart/form-data
+      - name: User-Agent
+        value: insomnia/8.4.5
+    authentication: {}
+    metaSortKey: -1700956962995
+    isPrivate: false
+    settingStoreCookies: true
+    settingSendCookies: true
+    settingDisableRenderRequestBody: false
+    settingEncodeUrl: true
+    settingRebuildPath: true
+    settingFollowRedirects: global
+    _type: request
+  - _id: req_086f5a4bea67405ea40e70c190a80ae6
+    parentId: wrk_f284def60d5b4d4ebba992dcae9b9ec4
+    modified: 1701270250815
+    created: 1700955245193
+    url: localhost:8083/movie
+    name: Get Movie Details
+    description: ""
+    method: GET
+    body:
+      mimeType: multipart/form-data
+      params:
+        - description: ""
+          id: pair_f96082113df64cf9aa5ed233479f2091
+          name: id
+          value: "1"
+    parameters: []
+    headers:
+      - name: Content-Type
+        value: multipart/form-data
+      - name: User-Agent
+        value: insomnia/8.4.5
+    authentication: {}
+    metaSortKey: -1700955245193
+    isPrivate: false
+    settingStoreCookies: true
+    settingSendCookies: true
+    settingDisableRenderRequestBody: false
+    settingEncodeUrl: true
+    settingRebuildPath: true
+    settingFollowRedirects: global
+    _type: request
+  - _id: req_2f1fb0f927e44938ac56d048c6315e4a
+    parentId: wrk_f284def60d5b4d4ebba992dcae9b9ec4
+    modified: 1701269731311
+    created: 1700954807846
+    url: localhost:8082/rating
+    name: Put New Rating
+    description: ""
+    method: PUT
+    body:
+      mimeType: multipart/form-data
+      params:
+        - description: ""
+          id: pair_6fce3d285abb414fbc7d237137918bbe
+          name: id
+          value: "1"
+        - description: ""
+          id: pair_bb4f3902338d43b59de281f15706b3c1
+          name: type
+          value: movie
+        - description: ""
+          id: pair_bf1814526de8476e85e71e20df62a930
+          name: userId
+          value: "1"
+        - description: ""
+          id: pair_06a65361704547bcbccd4294c01a222a
+          name: value
+          value: "5"
+    parameters: []
+    headers:
+      - name: Content-Type
+        value: multipart/form-data
+      - name: User-Agent
+        value: insomnia/8.4.5
+    authentication: {}
+    metaSortKey: -1700954807846
+    isPrivate: false
+    settingStoreCookies: true
+    settingSendCookies: true
+    settingDisableRenderRequestBody: false
+    settingEncodeUrl: true
+    settingRebuildPath: true
+    settingFollowRedirects: global
+    _type: request
+  - _id: req_e18676b45a0f4478a7c0b79fe65dafe9
+    parentId: wrk_f284def60d5b4d4ebba992dcae9b9ec4
+    modified: 1701269275305
+    created: 1700954563719
+    url: localhost:8082/rating
+    name: Get Aggregated Rating
+    description: ""
+    method: GET
+    body:
+      mimeType: multipart/form-data
+      params:
+        - description: ""
+          id: pair_cbdec6bb339c4baea060d2d4512a5455
+          name: id
+          value: "1"
+        - description: ""
+          id: pair_24dc8ced9408451a94786f4d9d91c140
+          name: type
+          value: movie
+    parameters: []
+    headers:
+      - name: Content-Type
+        value: multipart/form-data
+      - name: User-Agent
+        value: insomnia/8.4.5
+    authentication: {}
+    metaSortKey: -1700954563719
+    isPrivate: false
+    settingStoreCookies: true
+    settingSendCookies: true
+    settingDisableRenderRequestBody: false
+    settingEncodeUrl: true
+    settingRebuildPath: true
+    settingFollowRedirects: global
+    _type: request
+  - _id: req_a1b0d0b2eff847d6929b9e6328b0127f
+    parentId: wrk_f284def60d5b4d4ebba992dcae9b9ec4
+    modified: 1701269212036
+    created: 1700905795262
+    url: localhost:8081/metadata
+    name: Get Movie Metadata
+    description: ""
+    method: GET
+    body:
+      mimeType: multipart/form-data
+      params:
+        - description: ""
+          id: pair_1010899b5a5d43b39e762d365f9a0252
+          name: id
+          value: "1"
+    parameters: []
+    headers:
+      - name: Content-Type
+        value: multipart/form-data
+      - name: User-Agent
+        value: insomnia/8.4.5
+    authentication: {}
+    metaSortKey: -1700905795262
+    isPrivate: false
+    settingStoreCookies: true
+    settingSendCookies: true
+    settingDisableRenderRequestBody: false
+    settingEncodeUrl: true
+    settingRebuildPath: true
+    settingFollowRedirects: global
+    _type: request
+  - _id: env_e7d0ec14b3bd4015dc4152938adede01490854fa
+    parentId: wrk_f284def60d5b4d4ebba992dcae9b9ec4
+    modified: 1701115182583
+    created: 1700769981547
+    name: Base Environment
+    data: {}
+    dataPropertyOrder: null
+    color: null
+    isPrivate: false
+    metaSortKey: 1700769981547
+    _type: environment
+  - _id: jar_e7d0ec14b3bd4015dc4152938adede01490854fa
+    parentId: wrk_f284def60d5b4d4ebba992dcae9b9ec4
+    modified: 1701115184469
+    created: 1701115184469
+    name: Default Jar
+    cookies: []
+    _type: cookie_jar

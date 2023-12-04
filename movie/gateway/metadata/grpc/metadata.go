@@ -3,9 +3,9 @@ package grpc
 import (
 	"context"
 	"main/discovery"
-	"main/grpcutil"
 	"main/metadata/model"
 	"main/rpc"
+	"main/utils"
 )
 
 // Gateway defines a movie metadata gRPC gateway.
@@ -22,7 +22,7 @@ func New(registry discovery.Registry) *Gateway {
 
 // Get returns movie metadata by a movie id.
 func (g *Gateway) Get(ctx context.Context, id string) (*model.Metadata, error) {
-	conn, err := grpcutil.ServiceConnection(ctx, "metadata", g.registry)
+	conn, err := utils.ServiceConnection(ctx, "metadata", g.registry)
 	if err != nil {
 		return nil, err
 	}

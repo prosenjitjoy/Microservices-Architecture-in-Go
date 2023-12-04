@@ -34,13 +34,18 @@ migrate-up:
 migrate-down:
 	migrate -database ${DATABASE_URL} -path database/migration -verbose down
 
-db-docs:
+generate-dbdocs:
 	dbdocs build database/doc/db.dbml
 
-schema-generate:
+generate-schema:
 	dbml2sql --postgres -o database/doc/schema.sql database/doc/db.dbml
 
-sqlc-generate:
+generate-sqlc:
 	sqlc generate
 
-.PHONY: create-consul delete-consul proto-generate create-pulsar delete-pulsar create-postgres delete-postgres create-migration migrate-up migrate-down db-docs schema-generate sqlc-generate
+generate-image:
+	podman build --tag=metadata --target=metadata .
+	podman build --tag=rating --target=rating .
+	podman build --tag=movie --target=movie .
+
+.PHONY: create-consul delete-consul proto-generate create-pulsar delete-pulsar create-postgres delete-postgres create-migration migrate-up migrate-down generate-dbdocs generate-schema generate-sqlc generate-image

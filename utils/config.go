@@ -13,6 +13,11 @@ type ConfigDatabase struct {
 	ConnectionTimeout time.Duration `env:"CONNECTION_TIMEOUT" env-required:"true"`
 	OperationTimeout  time.Duration `env:"OPERATION_TIMEOUT" env-required:"true"`
 	DatabaseURL       string        `env:"DATABASE_URL" env-required:"true"`
+	MetadataPort      int           `env:"METADATA_PORT" env-required:"true"`
+	RatingPort        int           `env:"RATING_PORT" env-required:"true"`
+	MoviePort         int           `env:"MOVIE_PORT" env-required:"true"`
+	Host              string        `env:"HOST" env-required:"true"`
+	ConsulURL         string        `env:"CONSUL_URL" env-required:"true"`
 }
 
 func LoadConfig(path string) *ConfigDatabase {

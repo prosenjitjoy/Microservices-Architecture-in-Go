@@ -14,9 +14,6 @@ import (
 	"main/rpc"
 	"main/utils"
 	"net"
-
-	// "main/rating/handler/api"
-
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -27,23 +24,20 @@ import (
 const serviceName = "rating"
 
 func main() {
-	var port int
 	var config string
-	flag.IntVar(&port, "port", 8082, "API handler port")
 	flag.StringVar(&config, "config", ".env", "Configuration path")
 	flag.Parse()
-
 	cfg := utils.LoadConfig(config)
 
-	log.Println("Starting the rating service on port", port)
-	registry, err := consul.NewRegistry("localhost:8500")
+	log.Println("Starting the rating service on port", cfg.RatingPort)
+	registry, err := consul.NewRegistry(cfg.ConsulURL)
 	if err != nil {
 		log.Fatal("faild to connect to consul registry:", err)
 	}
 
 	ctx := context.Background()
 	instanceID := discovery.GenerateInstanceID(serviceName)
-	hostPort := fmt.Sprintf("localhost:%d", port)
+	hostPort := fmt.Sprintf("%s:%d", cfg.Host, cfg.RatingPort)
 	if err := registry.Register(ctx, instanceID, serviceName, hostPort); err != nil {
 		log.Fatal("failed to register rating service:", err)
 	}
@@ -58,29 +52,22 @@ func main() {
 	}()
 	defer registry.Deregister(ctx, instanceID, serviceName)
 
-	// repo := memory.New()
-
 	conn, err := pgxpool.New(context.Background(), cfg.DatabaseURL)
 	if err != nil {
 		log.Fatal("cannot connect to db:", err)
 	}
-	store := db.NewStore(conn)
 
+	store := db.NewStore(conn)
 	repo := postgres.New(store)
 	svc := controller.New(repo, cfg)
+	h := grpchandler.New(svc)
 
 	go func() {
 		if err := svc.StartConsume(ctx); err != nil {
 			log.Fatal(err)
 		}
 	}()
-	// h := api.New(svc)
-	// http.Handle("/rating", http.HandlerFunc(h.Handle))
-	// if err := http.ListenAndServe(hostPort, nil); err != nil {
-	// 	log.Fatal("Failed to start the server:", err)
-	// }
 
-	h := grpchandler.New(svc)
 	listener, err := net.Listen("tcp", hostPort)
 	if err != nil {
 		log.Fatalf("failed to listen on %s: %v", hostPort, err)
