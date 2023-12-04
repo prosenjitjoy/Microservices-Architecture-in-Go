@@ -5,17 +5,21 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"main/database/db"
 	"main/discovery"
 	"main/discovery/consul"
 	"main/rating/controller"
 	grpchandler "main/rating/handler/grpc"
+	"main/rating/repository/postgres"
 	"main/rpc"
+	"main/utils"
 	"net"
 
 	// "main/rating/handler/api"
-	"main/rating/repository/memory"
+
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
@@ -24,8 +28,12 @@ const serviceName = "rating"
 
 func main() {
 	var port int
+	var config string
 	flag.IntVar(&port, "port", 8082, "API handler port")
+	flag.StringVar(&config, "config", ".env", "Configuration path")
 	flag.Parse()
+
+	cfg := utils.LoadConfig(config)
 
 	log.Println("Starting the rating service on port", port)
 	registry, err := consul.NewRegistry("localhost:8500")
@@ -50,8 +58,16 @@ func main() {
 	}()
 	defer registry.Deregister(ctx, instanceID, serviceName)
 
-	repo := memory.New()
-	svc := controller.New(repo)
+	// repo := memory.New()
+
+	conn, err := pgxpool.New(context.Background(), cfg.DatabaseURL)
+	if err != nil {
+		log.Fatal("cannot connect to db:", err)
+	}
+	store := db.NewStore(conn)
+
+	repo := postgres.New(store)
+	svc := controller.New(repo, cfg)
 
 	go func() {
 		if err := svc.StartConsume(ctx); err != nil {

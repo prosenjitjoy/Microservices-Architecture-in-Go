@@ -7,17 +7,18 @@ import (
 )
 
 type ConfigDatabase struct {
-	PulsarURL         string        `yaml:"pulsar_url" env:"PULSAR_URL"`
-	TopicName         string        `yaml:"topic_name" env:"TOPIC_NAME"`
-	SubscriberName    string        `yaml:"subscriber_name" env:"SUBSCRIBER_NAME"`
-	ConnectionTimeout time.Duration `yaml:"connection_timeout" env:"CONNECTION_TIMEOUT"`
-	OperationTimeout  time.Duration `yaml:"operation_timeout" env:"OPERATION_TIMEOUT"`
+	PulsarURL         string        `env:"PULSAR_URL" env-required:"true"`
+	TopicName         string        `env:"TOPIC_NAME" env-required:"true"`
+	SubscriberName    string        `env:"SUBSCRIBER_NAME" env-required:"true"`
+	ConnectionTimeout time.Duration `env:"CONNECTION_TIMEOUT" env-required:"true"`
+	OperationTimeout  time.Duration `env:"OPERATION_TIMEOUT" env-required:"true"`
+	DatabaseURL       string        `env:"DATABASE_URL" env-required:"true"`
 }
 
-func LoadConfig() *ConfigDatabase {
+func LoadConfig(path string) *ConfigDatabase {
 	var cfg ConfigDatabase
 
-	err := cleanenv.ReadConfig("config.yaml", &cfg)
+	err := cleanenv.ReadConfig(path, &cfg)
 	if err != nil {
 		panic(err)
 	}

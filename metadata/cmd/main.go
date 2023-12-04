@@ -5,17 +5,21 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"main/database/db"
 	"main/discovery"
 	"main/discovery/consul"
 	"main/metadata/controller"
 	grpchandler "main/metadata/handler/grpc"
+	"main/metadata/repository/postgres"
 	"main/rpc"
+	"main/utils"
 
 	// "main/metadata/handler/api"
-	"main/metadata/repository/memory"
+	// "main/metadata/repository/memory"
 	"net"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
@@ -24,8 +28,13 @@ const serviceName = "metadata"
 
 func main() {
 	var port int
+	var config string
 	flag.IntVar(&port, "port", 8081, "API handler port")
+	flag.StringVar(&config, "config", ".env", "Configuration path")
 	flag.Parse()
+
+	cfg := utils.LoadConfig(config)
+	_ = cfg
 
 	log.Println("Starting the movie metadata service on port", port)
 	registry, err := consul.NewRegistry("localhost:8500")
@@ -50,7 +59,15 @@ func main() {
 	}()
 	defer registry.Deregister(ctx, instanceID, serviceName)
 
-	repo := memory.New()
+	// repo := memory.New()
+
+	conn, err := pgxpool.New(context.Background(), cfg.DatabaseURL)
+	if err != nil {
+		log.Fatal("cannot connect to db:", err)
+	}
+	store := db.NewStore(conn)
+
+	repo := postgres.New(store)
 	svc := controller.New(repo)
 
 	// h := api.New(svc)

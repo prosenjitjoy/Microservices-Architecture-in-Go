@@ -15,7 +15,7 @@ const (
 type UserID string
 
 // RatingValue defines a value of a rating record.
-type RatingValue int
+type RatingValue int64
 
 // Rating defines an individual rating created by a user for some record.
 type Rating struct {
