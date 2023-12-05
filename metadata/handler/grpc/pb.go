@@ -3,8 +3,8 @@ package grpc
 import (
 	"context"
 	"errors"
-	"main/metadata/controller"
 	"main/metadata/model"
+	"main/metadata/service"
 	"main/rpc"
 
 	"google.golang.org/grpc/codes"
@@ -14,11 +14,11 @@ import (
 // Handler defines a movie metadata gRPC handler.
 type Handler struct {
 	rpc.UnimplementedMetadataServiceServer
-	svc *controller.MetadataService
+	svc *service.MetadataService
 }
 
 // New creates a new movie metadata gRPC handler.
-func New(svc *controller.MetadataService) *Handler {
+func New(svc *service.MetadataService) *Handler {
 	return &Handler{
 		svc: svc,
 	}
@@ -31,7 +31,7 @@ func (h *Handler) GetMetadata(ctx context.Context, req *rpc.GetMetadataRequest) 
 	}
 
 	m, err := h.svc.GetMetadata(ctx, req.MovieId)
-	if err != nil && errors.Is(err, controller.ErrNotFound) {
+	if err != nil && errors.Is(err, service.ErrNotFound) {
 		return nil, status.Errorf(codes.NotFound, err.Error())
 	} else if err != nil {
 		return nil, status.Errorf(codes.Internal, err.Error())
@@ -51,7 +51,7 @@ func (h *Handler) PutMetadata(ctx context.Context, req *rpc.PutMetadataRequest) 
 	id := req.Metadata.MovieId
 	metadata := model.MetadataFromProto(req.Metadata)
 	err := h.svc.PutMetadata(ctx, id, metadata)
-	if err != nil && errors.Is(err, controller.ErrNotFound) {
+	if err != nil && errors.Is(err, service.ErrNotFound) {
 		return nil, status.Errorf(codes.NotFound, err.Error())
 	} else if err != nil {
 		return nil, status.Errorf(codes.Internal, err.Error())

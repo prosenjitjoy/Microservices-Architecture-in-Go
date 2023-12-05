@@ -48,4 +48,10 @@ generate-image:
 	podman build --tag=rating --target=rating .
 	podman build --tag=movie --target=movie .
 
-.PHONY: create-consul delete-consul proto-generate create-pulsar delete-pulsar create-postgres delete-postgres create-migration migrate-up migrate-down generate-dbdocs generate-schema generate-sqlc generate-image
+generate-mock:
+	mockgen -package mockdb -destination database/mockdb/store.go main/database/db Store
+
+run-test:
+	go test ./...
+
+.PHONY: create-consul delete-consul proto-generate create-pulsar delete-pulsar create-postgres delete-postgres create-migration migrate-up migrate-down generate-dbdocs generate-schema generate-sqlc generate-image generate-mock run-test

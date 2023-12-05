@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"main/metadata/model"
-	"main/movie/controller"
+	"main/movie/service"
 	"main/rpc"
 
 	"google.golang.org/grpc/codes"
@@ -14,11 +14,11 @@ import (
 // Handler defines a movie gRPC handler.
 type Handler struct {
 	rpc.UnimplementedMovieServiceServer
-	svc *controller.MovieService
+	svc *service.MovieService
 }
 
 // New creates a new movie gRPC handler.
-func New(svc *controller.MovieService) *Handler {
+func New(svc *service.MovieService) *Handler {
 	return &Handler{
 		svc: svc,
 	}
@@ -30,16 +30,19 @@ func (h *Handler) GetMovieDetails(ctx context.Context, req *rpc.GetMovieDetailsR
 	}
 
 	m, err := h.svc.Get(ctx, req.MovieId)
-	if err != nil && errors.Is(err, controller.ErrNotFound) {
+	if err != nil && errors.Is(err, service.ErrNotFound) {
 		return nil, status.Errorf(codes.NotFound, err.Error())
 	} else if err != nil {
 		return nil, status.Errorf(codes.Internal, err.Error())
 	}
 
+	md := model.MetadataToProto(&m.Metadata)
+	r := m.Rating
+
 	return &rpc.GetMovieDetailsResponse{
 		MovieDetails: &rpc.MovieDetails{
-			Rating:   *m.Rating,
-			Metadata: model.MetadataToProto(&m.Metadata),
+			Rating:   r,
+			Metadata: md,
 		},
 	}, nil
 }

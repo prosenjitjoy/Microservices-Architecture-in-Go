@@ -8,9 +8,9 @@ import (
 	"main/database/db"
 	"main/discovery"
 	"main/discovery/consul"
-	"main/rating/controller"
 	grpchandler "main/rating/handler/grpc"
 	"main/rating/repository/postgres"
+	"main/rating/service"
 	"main/rpc"
 	"main/utils"
 	"net"
@@ -59,7 +59,7 @@ func main() {
 
 	store := db.NewStore(conn)
 	repo := postgres.New(store)
-	svc := controller.New(repo, cfg)
+	svc := service.New(repo, cfg)
 	h := grpchandler.New(svc)
 
 	go func() {

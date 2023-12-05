@@ -7,10 +7,10 @@ import (
 	"log"
 	"main/discovery"
 	"main/discovery/consul"
-	"main/movie/controller"
 	metadatagateway "main/movie/gateway/metadata/grpc"
 	ratinggateway "main/movie/gateway/rating/grpc"
 	grpchandler "main/movie/handler/grpc"
+	"main/movie/service"
 	"main/rpc"
 	"main/utils"
 	"net"
@@ -53,7 +53,7 @@ func main() {
 
 	metadataGateway := metadatagateway.New(registry)
 	ratingGateway := ratinggateway.New(registry)
-	svc := controller.New(ratingGateway, metadataGateway)
+	svc := service.New(ratingGateway, metadataGateway)
 	h := grpchandler.New(svc)
 
 	listener, err := net.Listen("tcp", hostPort)

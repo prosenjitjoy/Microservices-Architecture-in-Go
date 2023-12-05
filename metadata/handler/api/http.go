@@ -4,19 +4,19 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
-	"main/metadata/controller"
 	"main/metadata/model"
 	"main/metadata/repository"
+	"main/metadata/service"
 	"net/http"
 )
 
 // Handler defines a movie metadata HTTP handler.
 type Handler struct {
-	ctrl *controller.MetadataService
+	ctrl *service.MetadataService
 }
 
 // New creates a new movie metadata HTTP handler.
-func New(ctrl *controller.MetadataService) *Handler {
+func New(ctrl *service.MetadataService) *Handler {
 	return &Handler{
 		ctrl: ctrl,
 	}

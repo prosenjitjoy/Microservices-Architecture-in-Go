@@ -8,9 +8,9 @@ import (
 	"main/database/db"
 	"main/discovery"
 	"main/discovery/consul"
-	"main/metadata/controller"
 	grpchandler "main/metadata/handler/grpc"
 	"main/metadata/repository/postgres"
+	"main/metadata/service"
 	"main/rpc"
 	"main/utils"
 	"net"
@@ -60,7 +60,7 @@ func main() {
 
 	store := db.NewStore(conn)
 	repo := postgres.New(store)
-	svc := controller.New(repo)
+	svc := service.New(repo)
 	h := grpchandler.New(svc)
 
 	listener, err := net.Listen("tcp", hostPort)

@@ -2,10 +2,8 @@ package utils
 
 import (
 	"context"
-	"fmt"
 	"main/discovery"
 	"math/rand"
-	"strings"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -19,7 +17,7 @@ func ServiceConnection(ctx context.Context, serviceName string, registry discove
 	}
 
 	targetAddress := addrs[rand.Intn(len(addrs))]
-	fmt.Printf("%s: %s\n", strings.ToUpper(serviceName), targetAddress)
+	// fmt.Printf("%s: %s\n", strings.ToUpper(serviceName), targetAddress)
 
 	return grpc.Dial(targetAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 }

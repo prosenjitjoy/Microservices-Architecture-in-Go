@@ -1,4 +1,4 @@
-package controller
+package service
 
 import (
 	"context"
@@ -54,7 +54,7 @@ func (c *MovieService) Get(ctx context.Context, id string) (*model.MovieDetails,
 	} else if err != nil {
 		return nil, err
 	} else {
-		details.Rating = &rating
+		details.Rating = rating
 	}
 
 	return details, nil

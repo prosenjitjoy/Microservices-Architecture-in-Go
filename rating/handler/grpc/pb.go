@@ -3,8 +3,8 @@ package grpc
 import (
 	"context"
 	"errors"
-	"main/rating/controller"
 	"main/rating/model"
+	"main/rating/service"
 	"main/rpc"
 
 	"google.golang.org/grpc/codes"
@@ -14,11 +14,11 @@ import (
 // Handler defines a gRPC rating API handler.
 type Handler struct {
 	rpc.UnimplementedRatingServiceServer
-	svc *controller.RatingService
+	svc *service.RatingService
 }
 
 // New creates a new movie metadata gRPC handler.
-func New(svc *controller.RatingService) *Handler {
+func New(svc *service.RatingService) *Handler {
 	return &Handler{
 		svc: svc,
 	}
@@ -31,7 +31,7 @@ func (h *Handler) GetAggregatedRating(ctx context.Context, req *rpc.GetAggregate
 	}
 
 	rating, err := h.svc.GetAggregatedRating(ctx, model.RecordID(req.RecordId), model.RecordType(req.RecordType))
-	if err != nil && errors.Is(err, controller.ErrNotFound) {
+	if err != nil && errors.Is(err, service.ErrNotFound) {
 		return nil, status.Errorf(codes.NotFound, err.Error())
 	} else if err != nil {
 		return nil, status.Errorf(codes.Internal, err.Error())

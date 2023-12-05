@@ -4,19 +4,19 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
-	"main/rating/controller"
 	"main/rating/model"
+	"main/rating/service"
 	"net/http"
 	"strconv"
 )
 
 // Handler defines a rating service controller.
 type Handler struct {
-	ctrl *controller.RatingService
+	ctrl *service.RatingService
 }
 
 // New creates a new rating service HTTP handler.
-func New(ctrl *controller.RatingService) *Handler {
+func New(ctrl *service.RatingService) *Handler {
 	return &Handler{
 		ctrl: ctrl,
 	}
@@ -38,7 +38,7 @@ func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		v, err := h.ctrl.GetAggregatedRating(r.Context(), recordID, recordType)
-		if err != nil && errors.Is(err, controller.ErrNotFound) {
+		if err != nil && errors.Is(err, service.ErrNotFound) {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
