@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"main/rating/model"
 	"main/rating/repository"
-	"main/utils"
+	"main/util"
 
 	"github.com/apache/pulsar-client-go/pulsar"
 )
@@ -23,11 +23,11 @@ type ratingRepository interface {
 // RatingService defines a rating service controller.
 type RatingService struct {
 	repo ratingRepository
-	cfg  *utils.ConfigDatabase
+	cfg  *util.ConfigDatabase
 }
 
 // New creates a rating service controller.
-func New(repo ratingRepository, config *utils.ConfigDatabase) *RatingService {
+func New(repo ratingRepository, config *util.ConfigDatabase) *RatingService {
 	return &RatingService{
 		repo: repo,
 		cfg:  config,

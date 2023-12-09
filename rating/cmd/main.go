@@ -4,7 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
+	"log/slog"
 	"main/database/db"
 	"main/discovery"
 	"main/discovery/consul"
@@ -12,11 +12,19 @@ import (
 	"main/rating/repository/postgres"
 	"main/rating/service"
 	"main/rpc"
-	"main/utils"
+	"main/tracing"
+	"main/util"
 	"net"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
@@ -27,25 +35,53 @@ func main() {
 	var config string
 	flag.StringVar(&config, "config", ".env", "Configuration path")
 	flag.Parse()
-	cfg := utils.LoadConfig(config)
+	cfg := util.LoadConfig(config)
 
-	log.Println("Starting the rating service on port", cfg.RatingPort)
-	registry, err := consul.NewRegistry(cfg.ConsulURL)
-	if err != nil {
-		log.Fatal("faild to connect to consul registry:", err)
+	if cfg.Environment == "dev" {
+		var logger = slog.New(slog.NewTextHandler(os.Stdout, nil)).With("service_name", serviceName)
+		slog.SetDefault(logger)
+	} else {
+		var logger = slog.New(slog.NewJSONHandler(os.Stdout, nil)).With("service_name", serviceName)
+		slog.SetDefault(logger)
 	}
 
-	ctx := context.Background()
+	slog.Info("Starting the rating service on port", slog.Int("port", cfg.RatingPort))
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	tp, err := tracing.NewJaegerProvider(cfg.JaegerURL, serviceName)
+	if err != nil {
+		slog.Error("failed to initialize Jaeger provider:", slog.String("error", err.Error()))
+		return
+	}
+	defer func() {
+		if err := tp.Shutdown(ctx); err != nil {
+			slog.Error("failed to shutdown tracing provider:", slog.String("error", err.Error()))
+			return
+		}
+	}()
+
+	otel.SetTracerProvider(tp)
+	otel.SetTextMapPropagator(propagation.TraceContext{})
+
+	registry, err := consul.NewRegistry(cfg.ConsulURL)
+	if err != nil {
+		slog.Error("faild to connect to consul registry:", slog.String("error", err.Error()))
+		return
+	}
+
 	instanceID := discovery.GenerateInstanceID(serviceName)
 	hostPort := fmt.Sprintf("%s:%d", cfg.Host, cfg.RatingPort)
 	if err := registry.Register(ctx, instanceID, serviceName, hostPort); err != nil {
-		log.Fatal("failed to register rating service:", err)
+		slog.Error("failed to register rating service:", slog.String("error", err.Error()))
+		return
 	}
 
 	go func() {
 		for {
 			if err := registry.ReportHealthyState(instanceID, serviceName); err != nil {
-				log.Println("Failed to report healthy state:", err)
+				slog.Info("Failed to report healthy state:", slog.String("error", err.Error()))
 			}
 			time.Sleep(1 * time.Second)
 		}
@@ -54,7 +90,8 @@ func main() {
 
 	conn, err := pgxpool.New(context.Background(), cfg.DatabaseURL)
 	if err != nil {
-		log.Fatal("cannot connect to db:", err)
+		slog.Error("cannot connect to db:", slog.String("error", err.Error()))
+		return
 	}
 
 	store := db.NewStore(conn)
@@ -64,19 +101,37 @@ func main() {
 
 	go func() {
 		if err := svc.StartConsume(ctx); err != nil {
-			log.Fatal(err)
+			slog.Error("failed to consume events:", slog.String("error", err.Error()))
+			return
 		}
 	}()
 
 	listener, err := net.Listen("tcp", hostPort)
 	if err != nil {
-		log.Fatalf("failed to listen on %s: %v", hostPort, err)
+		slog.Error("failed to listen on:", slog.String("host", hostPort), slog.String("error", err.Error()))
+		return
 	}
 
-	server := grpc.NewServer()
+	server := grpc.NewServer(grpc.StatsHandler(otelgrpc.NewServerHandler()))
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		s := <-sigChan
+		cancel()
+		slog.Info("Received signal", s)
+		slog.Info("attempting graceful shutdown")
+		server.GracefulStop()
+		slog.Info("Gracefully stopped the gRPC server")
+	}()
+
 	reflection.Register(server)
 	rpc.RegisterRatingServiceServer(server, h)
 	if err := server.Serve(listener); err != nil {
-		log.Fatal("Failed to start gRPC server:", err)
+		slog.Error("Failed to start gRPC server:", slog.String("error", err.Error()))
+		return
 	}
 }

@@ -1,10 +1,11 @@
-package utils
+package util
 
 import (
 	"context"
 	"main/discovery"
 	"math/rand"
 
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -17,7 +18,10 @@ func ServiceConnection(ctx context.Context, serviceName string, registry discove
 	}
 
 	targetAddress := addrs[rand.Intn(len(addrs))]
-	// fmt.Printf("%s: %s\n", strings.ToUpper(serviceName), targetAddress)
 
-	return grpc.Dial(targetAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	return grpc.Dial(
+		targetAddress,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
+	)
 }

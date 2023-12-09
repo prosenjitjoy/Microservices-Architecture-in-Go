@@ -3,12 +3,13 @@ package main
 import (
 	"context"
 	"flag"
-	"log"
+	"log/slog"
 	"main/discovery"
 	"main/discovery/memory"
 	"main/rpc"
-	"main/utils"
+	"main/util"
 	"net"
+	"os"
 
 	metadatatest "main/metadata/testutil"
 	movietest "main/movie/testutil"
@@ -34,14 +35,22 @@ func main() {
 	var config string
 	flag.StringVar(&config, "config", ".env", "Configuration path")
 	flag.Parse()
-	cfg := utils.LoadConfig(config)
+	cfg := util.LoadConfig(config)
 
-	log.Println("Starting the integration test")
+	if cfg.Environment == "dev" {
+		var logger = slog.New(slog.NewTextHandler(os.Stdout, nil))
+		slog.SetDefault(logger)
+	} else {
+		var logger = slog.New(slog.NewJSONHandler(os.Stdout, nil))
+		slog.SetDefault(logger)
+	}
+
+	slog.Info("Starting the integration test")
 
 	ctx := context.Background()
 	registry := memory.NewRegistry()
 
-	log.Println("Setting up service handlers and clients")
+	slog.Info("Setting up service handlers and clients")
 
 	metadataSrv := startMetadataService(ctx, registry)
 	defer metadataSrv.GracefulStop()
@@ -53,26 +62,29 @@ func main() {
 	opts := grpc.WithTransportCredentials(insecure.NewCredentials())
 	metadataConn, err := grpc.Dial(metadataServiceAddr, opts)
 	if err != nil {
-		panic(err)
+		slog.Error("failed to create metadata gRPC client:", slog.String("error", err.Error()))
+		return
 	}
 	defer metadataConn.Close()
 	metadataClient := rpc.NewMetadataServiceClient(metadataConn)
 
 	ratingConn, err := grpc.Dial(ratingServiceAddr, opts)
 	if err != nil {
-		panic(err)
+		slog.Error("failed to create rating gRPC client:", slog.String("error", err.Error()))
+		return
 	}
 	defer ratingConn.Close()
 	ratingClient := rpc.NewRatingServiceClient(ratingConn)
 
 	movieConn, err := grpc.Dial(movieServiceAddr, opts)
 	if err != nil {
-		panic(err)
+		slog.Error("failed to create movie gRPC client:", slog.String("error", err.Error()))
+		return
 	}
 	defer movieConn.Close()
 	movieClient := rpc.NewMovieServiceClient(movieConn)
 
-	log.Println("Saving test metadata via metadata service")
+	slog.Info("Saving test metadata via metadata service")
 
 	m := &rpc.Metadata{
 		MovieId:     "the-movie",
@@ -84,34 +96,39 @@ func main() {
 	if _, err := metadataClient.PutMetadata(ctx, &rpc.PutMetadataRequest{
 		Metadata: m,
 	}); err != nil {
-		log.Fatalf("put metadata: %v", err)
+		slog.Error("failed to put metadata:", slog.String("error", err.Error()))
+		return
 	}
 
-	log.Println("Retrieving test metadata via metadata service")
+	slog.Info("Retrieving test metadata via metadata service")
 
 	getMetadataResp, err := metadataClient.GetMetadata(ctx, &rpc.GetMetadataRequest{MovieId: m.MovieId})
 	if err != nil {
-		log.Fatalf("get metadata: %v", err)
+		slog.Error("get metadata:", slog.String("error", err.Error()))
+		return
 	}
 	if diff := cmp.Diff(getMetadataResp.Metadata, m, cmpopts.IgnoreUnexported(rpc.Metadata{})); diff != "" {
-		log.Fatalf("get metadata after put mismatch: %v", diff)
+		slog.Error("get metadata after put mismatch:", slog.String("diff", diff))
+		return
 	}
 
-	log.Println("Getting movie details via movie service")
+	slog.Info("Getting movie details via movie service")
 	wantMovieDetails := &rpc.MovieDetails{
 		Metadata: m,
 	}
 
 	getMovieDetailsResp, err := movieClient.GetMovieDetails(ctx, &rpc.GetMovieDetailsRequest{MovieId: m.MovieId})
 	if err != nil {
-		log.Fatalf("geet movie details: %v", err)
+		slog.Error("geet movie details", slog.String("error", err.Error()))
+		return
 	}
 
 	if diff := cmp.Diff(getMovieDetailsResp.MovieDetails, wantMovieDetails, cmpopts.IgnoreUnexported(rpc.MovieDetails{}, rpc.Metadata{})); diff != "" {
-		log.Fatalf("get movie details after put mismatch: %v", err)
+		slog.Error("get movie details after put mismatch:", slog.String("error", err.Error()))
+		return
 	}
 
-	log.Println("Saving first rating via rating service")
+	slog.Info("Saving first rating via rating service")
 
 	const userID = "user0"
 	const recordTypeMovie = "movie"
@@ -122,24 +139,27 @@ func main() {
 		RecordType:  recordTypeMovie,
 		RatingValue: firstRating,
 	}); err != nil {
-		log.Fatalf("put rating: %v", err)
+		slog.Error("put rating", slog.String("error", err.Error()))
+		return
 	}
 
-	log.Println("Retrieving initial aggregated rating via rating service")
+	slog.Info("Retrieving initial aggregated rating via rating service")
 
 	getAggregatedRatingResp, err := ratingClient.GetAggregatedRating(ctx, &rpc.GetAggregatedRatingRequest{
 		RecordId:   m.MovieId,
 		RecordType: recordTypeMovie,
 	})
 	if err != nil {
-		log.Fatalf("get aggregated rating: %v", err)
+		slog.Error("get aggregated rating:", slog.String("error", err.Error()))
+		return
 	}
 
 	if got, want := getAggregatedRatingResp.RatingValue, float64(5); got != want {
-		log.Fatalf("rating mismatch: got %v want %v", got, want)
+		slog.Error("rating mismatch:", slog.Float64("got", got), slog.Float64("want", want))
+		return
 	}
 
-	log.Println("Saving second rating via rating service")
+	slog.Info("Saving second rating via rating service")
 	secondRating := int32(1)
 	if _, err := ratingClient.PutRating(ctx, &rpc.PutRatingRequest{
 		UserId:      userID,
@@ -147,104 +167,118 @@ func main() {
 		RecordType:  recordTypeMovie,
 		RatingValue: secondRating,
 	}); err != nil {
-		log.Fatalf("put rating: %v", err)
+		slog.Error("put rating:", slog.String("error", err.Error()))
+		return
 	}
 
-	log.Println("Saving new aggregated rating via rating service")
+	slog.Info("Saving new aggregated rating via rating service")
 	getAggregatedRatingResp, err = ratingClient.GetAggregatedRating(ctx, &rpc.GetAggregatedRatingRequest{
 		RecordId:   m.MovieId,
 		RecordType: recordTypeMovie,
 	})
 	if err != nil {
-		log.Fatalf("get aggregated rating: %v", err)
+		slog.Error("get aggregated rating:", slog.String("error", err.Error()))
+		return
 	}
 
 	wantRating := float64((firstRating + secondRating) / 2)
 	if got, want := getAggregatedRatingResp.RatingValue, wantRating; got != want {
-		log.Fatalf("rating mismatch: got %v want %v", got, want)
+		slog.Error("rating mismatch:", slog.Float64("got", got), slog.Float64("want", want))
+		return
 	}
 
-	log.Println("Getting updated movie details via movie service")
+	slog.Info("Getting updated movie details via movie service")
 
 	getMovieDetailsResp, err = movieClient.GetMovieDetails(ctx, &rpc.GetMovieDetailsRequest{MovieId: m.MovieId})
 	if err != nil {
-		log.Fatalf("get movie details: %v", err)
+		slog.Error("get movie details:", slog.String("error", err.Error()))
+		return
 	}
 
 	wantMovieDetails.Rating = wantRating
 	if diff := cmp.Diff(getMovieDetailsResp.MovieDetails, wantMovieDetails, cmpopts.IgnoreUnexported(rpc.MovieDetails{}, rpc.Metadata{})); diff != "" {
-		log.Fatalf("get movie details after update mismatch: %v", err)
+		slog.Error("get movie details after update mismatch:", slog.String("error", err.Error()))
+		return
 	}
 
-	log.Println("Integration test execution successfull")
+	slog.Info("Integration test execution successfull")
 }
 
 func startMetadataService(ctx context.Context, registry discovery.Registry) *grpc.Server {
-	log.Println("Starting metadata service on ", metadataServiceAddr)
+	slog.Info("Starting metadata service on ", slog.String("address", metadataServiceAddr))
 	h := metadatatest.NewTestMetadataGRPCServer()
 	l, err := net.Listen("tcp", metadataServiceAddr)
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		slog.Error("failed to listen:", slog.String("error", err.Error()))
+		os.Exit(1)
 	}
 
 	srv := grpc.NewServer()
 	rpc.RegisterMetadataServiceServer(srv, h)
 	go func() {
 		if err := srv.Serve(l); err != nil {
-			panic(err)
+			slog.Error("failed to serve:", slog.String("error", err.Error()))
+			os.Exit(1)
 		}
 	}()
 
 	id := discovery.GenerateInstanceID(metadataServiceName)
 	if err := registry.Register(ctx, id, metadataServiceName, metadataServiceAddr); err != nil {
-		panic(err)
+		slog.Error("failed to resister:", slog.String("error", err.Error()))
+		os.Exit(1)
 	}
 
 	return srv
 }
 
-func startRatingService(ctx context.Context, registry discovery.Registry, cfg *utils.ConfigDatabase) *grpc.Server {
-	log.Println("Starting rating service on ", ratingServiceAddr)
+func startRatingService(ctx context.Context, registry discovery.Registry, cfg *util.ConfigDatabase) *grpc.Server {
+	slog.Info("Starting rating service on ", slog.String("address", ratingServiceAddr))
 	h := ratingtest.NewTestRatingGRPCServer(cfg)
 	l, err := net.Listen("tcp", ratingServiceAddr)
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		slog.Error("failed to listen:", slog.String("error", err.Error()))
+		os.Exit(1)
 	}
 	srv := grpc.NewServer()
 	rpc.RegisterRatingServiceServer(srv, h)
 	go func() {
 		if err := srv.Serve(l); err != nil {
-			panic(err)
+			slog.Error("failed to serve:", slog.String("error", err.Error()))
+			os.Exit(1)
 		}
 	}()
 
 	id := discovery.GenerateInstanceID(ratingServiceName)
 	if err := registry.Register(ctx, id, ratingServiceName, ratingServiceAddr); err != nil {
-		panic(err)
+		slog.Error("failed to resister:", slog.String("error", err.Error()))
+		os.Exit(1)
 	}
 
 	return srv
 }
 
 func startMovieService(ctx context.Context, registry discovery.Registry) *grpc.Server {
-	log.Println("Starting movie service on ", movieServiceAddr)
+	slog.Info("Starting movie service on ", slog.String("address", movieServiceAddr))
 	h := movietest.NewTestMovieGRPCServer(registry)
 	l, err := net.Listen("tcp", movieServiceAddr)
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		slog.Error("failed to listen:", slog.String("error", err.Error()))
+		os.Exit(1)
 	}
 	srv := grpc.NewServer()
 	rpc.RegisterMovieServiceServer(srv, h)
 
 	go func() {
 		if err := srv.Serve(l); err != nil {
-			panic(err)
+			slog.Error("failed to serve:", slog.String("error", err.Error()))
+			os.Exit(1)
 		}
 	}()
 
 	id := discovery.GenerateInstanceID(movieServiceName)
 	if err := registry.Register(ctx, id, movieServiceName, movieServiceAddr); err != nil {
-		panic(err)
+		slog.Error("failed to resister:", slog.String("error", err.Error()))
+		os.Exit(1)
 	}
 
 	return srv

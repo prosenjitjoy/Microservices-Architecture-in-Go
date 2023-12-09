@@ -1,4 +1,4 @@
-package utils
+package util
 
 import (
 	"time"
@@ -18,6 +18,8 @@ type ConfigDatabase struct {
 	MoviePort         int           `env:"MOVIE_PORT" env-required:"true"`
 	Host              string        `env:"HOST" env-required:"true"`
 	ConsulURL         string        `env:"CONSUL_URL" env-required:"true"`
+	JaegerURL         string        `env:"JAEGER_URL" env-required:"true"`
+	Environment       string        `env:"ENVIRONMENT" env-required:"true"`
 }
 
 func LoadConfig(path string) *ConfigDatabase {
