@@ -3,7 +3,7 @@ package db
 import (
 	"context"
 	"log"
-	"main/utils"
+	"main/util"
 	"os"
 	"testing"
 
@@ -13,7 +13,7 @@ import (
 var testStore Store
 
 func TestMain(m *testing.M) {
-	cfg := utils.LoadConfig("../../.env")
+	cfg := util.LoadConfig("../../.env")
 	connPool, err := pgxpool.New(context.Background(), cfg.DatabaseURL)
 	if err != nil {
 		log.Fatal("cannot connect to db:", err)

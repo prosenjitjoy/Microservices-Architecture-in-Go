@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"log"
 	"main/rating/model"
-	"main/utils"
+	"main/util"
 	"os"
 
 	"github.com/apache/pulsar-client-go/pulsar"
@@ -19,7 +19,7 @@ func main() {
 	flag.StringVar(&config, "config", ".env", "Configuration path")
 	flag.StringVar(&data, "data", "data.json", "Load Rating data")
 	flag.Parse()
-	cfg := utils.LoadConfig(config)
+	cfg := util.LoadConfig(config)
 
 	client, err := pulsar.NewClient(pulsar.ClientOptions{
 		URL:               cfg.PulsarURL,

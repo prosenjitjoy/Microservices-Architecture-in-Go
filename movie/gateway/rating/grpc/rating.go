@@ -5,7 +5,7 @@ import (
 	"main/discovery"
 	"main/rating/model"
 	"main/rpc"
-	"main/utils"
+	"main/util"
 )
 
 // Gateway defines an gRPC gateway for a rating service.
@@ -22,7 +22,7 @@ func New(registry discovery.Registry) *Gateway {
 
 // GetAggregatedRating returns the aggregated rating for a record or ErrNotFound if there are not ratings for it.
 func (g *Gateway) GetAggregatedRating(ctx context.Context, recordID model.RecordID, recordType model.RecordType) (float64, error) {
-	conn, err := utils.ServiceConnection(ctx, "rating", g.registry)
+	conn, err := util.ServiceConnection(ctx, "rating", g.registry)
 	if err != nil {
 		return 0, err
 	}
@@ -42,7 +42,7 @@ func (g *Gateway) GetAggregatedRating(ctx context.Context, recordID model.Record
 
 // PutRating writes a rating.
 func (g *Gateway) PutRating(ctx context.Context, recordID model.RecordID, recordType model.RecordType, rating *model.Rating) error {
-	conn, err := utils.ServiceConnection(ctx, "rating", g.registry)
+	conn, err := util.ServiceConnection(ctx, "rating", g.registry)
 	if err != nil {
 		return err
 	}

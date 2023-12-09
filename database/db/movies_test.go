@@ -2,7 +2,7 @@ package db
 
 import (
 	"context"
-	"main/utils"
+	"main/util"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -10,10 +10,10 @@ import (
 
 func createRandomMovie(t *testing.T) *Movie {
 	arg := &CreateMovieParams{
-		ID:          utils.RandomString(8),
-		Title:       utils.RandomString(8),
-		Description: utils.RandomString(16),
-		Director:    utils.RandomString(8),
+		ID:          util.RandomString(8),
+		Title:       util.RandomString(8),
+		Description: util.RandomString(16),
+		Director:    util.RandomString(8),
 	}
 
 	movie, err := testStore.CreateMovie(context.Background(), arg)

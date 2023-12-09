@@ -2,7 +2,7 @@ package db
 
 import (
 	"context"
-	"main/utils"
+	"main/util"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -12,8 +12,8 @@ func createRandomRating(t *testing.T, movieId, recordType string) *Rating {
 	arg := &CreateRatingParams{
 		MovieID:    movieId,
 		RecordType: recordType,
-		UserID:     utils.RandomString(8),
-		Value:      int32(utils.RandomInt(0, 10)),
+		UserID:     util.RandomString(8),
+		Value:      int32(util.RandomInt(0, 10)),
 	}
 
 	rating, err := testStore.CreateRating(context.Background(), arg)
@@ -29,14 +29,14 @@ func createRandomRating(t *testing.T, movieId, recordType string) *Rating {
 }
 
 func TestCreateRating(t *testing.T) {
-	movieId := utils.RandomString(8)
-	recordType := utils.RandomString(8)
+	movieId := util.RandomString(8)
+	recordType := util.RandomString(8)
 	createRandomRating(t, movieId, recordType)
 }
 
 func TestListRatings(t *testing.T) {
-	movieId := utils.RandomString(8)
-	recordType := utils.RandomString(8)
+	movieId := util.RandomString(8)
+	recordType := util.RandomString(8)
 
 	var lastAccount *Rating
 	for i := 0; i < 10; i++ {

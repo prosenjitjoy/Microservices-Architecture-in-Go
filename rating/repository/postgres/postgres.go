@@ -2,10 +2,13 @@ package postgres
 
 import (
 	"context"
+	"go.opentelemetry.io/otel"
 	"main/database/db"
 	"main/rating/model"
 	"main/rating/repository"
 )
+
+const tracerID = "rating-repository-postgres"
 
 // Repository defines a PostgreSQL-based movie metadata repository.
 type Repository struct {
@@ -21,6 +24,9 @@ func New(store db.Store) *Repository {
 
 // Get retrieves all ratings for a given record.
 func (r *Repository) Get(ctx context.Context, movieId model.RecordID, recordType model.RecordType) ([]model.Rating, error) {
+	_, span := otel.Tracer(tracerID).Start(ctx, "Repository/GET")
+	defer span.End()
+
 	ratings, err := r.db.ListRatings(ctx, &db.ListRatingsParams{
 		MovieID:    string(movieId),
 		RecordType: string(recordType),
@@ -46,6 +52,9 @@ func (r *Repository) Get(ctx context.Context, movieId model.RecordID, recordType
 
 // Put adds a rating for a given record.
 func (r *Repository) Put(ctx context.Context, movieId model.RecordID, recordType model.RecordType, rating *model.Rating) error {
+	_, span := otel.Tracer(tracerID).Start(ctx, "Repository/PUT")
+	defer span.End()
+
 	_, err := r.db.CreateRating(ctx, &db.CreateRatingParams{
 		MovieID:    string(movieId),
 		RecordType: string(recordType),
