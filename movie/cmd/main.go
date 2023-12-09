@@ -15,6 +15,7 @@ import (
 	"main/tracing"
 	"main/util"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"sync"
@@ -22,6 +23,9 @@ import (
 	"time"
 
 	// "github.com/grpc-ecosystem/go-grpc-middleware/ratelimit"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
@@ -48,6 +52,25 @@ func main() {
 		var logger = slog.New(slog.NewJSONHandler(os.Stdout, nil)).With("service_name", serviceName)
 		slog.SetDefault(logger)
 	}
+
+	// prometheus
+	reg := prometheus.NewRegistry()
+	counter := promauto.NewCounter(prometheus.CounterOpts{
+		Namespace: serviceName,
+		Name:      "service_started",
+	})
+
+	http.Handle("/metrics", promhttp.HandlerFor(reg, promhttp.HandlerOpts{Registry: reg}))
+	go func() {
+		if err := http.ListenAndServe(fmt.Sprintf(":%d", cfg.MovieMetricsPort), nil); err != nil {
+			slog.Error("failed to start metrics handler:", slog.String("error", err.Error()))
+			return
+		}
+	}()
+
+	reg.MustRegister(counter)
+	defer reg.Unregister(counter)
+	counter.Inc()
 
 	slog.Info("Starting the movie service on port", slog.Int("port", cfg.MoviePort))
 
