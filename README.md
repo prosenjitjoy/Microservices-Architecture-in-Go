@@ -1,3 +1,3 @@
 # Go-with-Microservices
 
-Microservice project build using Hashicorp Consul, gRPC, apache Pulsar and PostgreSQL.  
+Complete microservice project build using Consul, gRPC, Pulsar, Jaeger, Prometheus and PostgreSQL. 

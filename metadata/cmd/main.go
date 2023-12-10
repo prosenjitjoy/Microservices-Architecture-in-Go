@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime/pprof"
 	"sync"
 	"syscall"
 	"time"
@@ -36,11 +37,15 @@ import (
 const serviceName = "metadata"
 
 func main() {
+	// configurations
 	var config string
+	var simulateCPUload bool
 	flag.StringVar(&config, "config", ".env", "Configuration path")
+	flag.BoolVar(&simulateCPUload, "simulatecpuload", false, "Simulate CPU load for profiling")
 	flag.Parse()
 	cfg := util.LoadConfig(config)
 
+	// environments
 	if cfg.Environment == "dev" {
 		var logger = slog.New(slog.NewTextHandler(os.Stdout, nil)).With("service_name", serviceName)
 		slog.SetDefault(logger)
@@ -49,7 +54,26 @@ func main() {
 		slog.SetDefault(logger)
 	}
 
-	// prometheus
+	// profiling
+	cpuFile, err := os.Create("cpu.pprof")
+	if err != nil {
+		panic(err)
+	}
+	memFile, err := os.Create("mem.pprof")
+	if err != nil {
+		panic(err)
+	}
+
+	pprof.StartCPUProfile(cpuFile)
+	pprof.WriteHeapProfile(memFile)
+	defer pprof.StopCPUProfile()
+	defer memFile.Close()
+
+	if simulateCPUload {
+		go util.HeavyOperation()
+	}
+
+	// prometheus metrics
 	reg := prometheus.NewRegistry()
 	counter := promauto.NewCounter(prometheus.CounterOpts{
 		Namespace: serviceName,
@@ -68,6 +92,7 @@ func main() {
 	defer reg.Unregister(counter)
 	counter.Inc()
 
+	// jaeger tracing
 	slog.Info("Starting the movie metadata service on port", slog.Int("port", cfg.MetadataPort))
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -88,6 +113,7 @@ func main() {
 	otel.SetTracerProvider(tp)
 	otel.SetTextMapPropagator(propagation.TraceContext{})
 
+	// service discovery
 	registry, err := consul.NewRegistry(cfg.ConsulURL)
 	if err != nil {
 		slog.Error("failed to connect consul registry:", slog.String("error", err.Error()))
@@ -112,6 +138,7 @@ func main() {
 	}()
 	defer registry.Deregister(ctx, instanceID, serviceName)
 
+	// services
 	conn, err := pgxpool.New(context.Background(), cfg.DatabaseURL)
 	if err != nil {
 		slog.Error("cannot connect to db:", slog.String("error", err.Error()))

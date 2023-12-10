@@ -25,6 +25,15 @@ delete-postgres:
 	podman rm -f postgres
 	podman volume prune
 
+create-migration:
+	migrate create -ext sql -dir database/migration -seq $(name)
+
+migrate-up:
+	migrate -database ${DATABASE_URL} -path database/migration -verbose up
+
+migrate-down:
+	migrate -database ${DATABASE_URL} -path database/migration -verbose down
+
 create-jaeger:
 	podman run --name jaeger --hostname jaeger -e COLLECTOR_OTLP_ENABLED=true -p 6831:6831/udp -p 6832:6832/udp -p 5778:5778 -p 16686:16686 -p 4317:4317 -p 4318:4318 -p 14250:14250 -p 14268:14268 -p 14269:14269 -p 9411:9411 -d jaegertracing/all-in-one:1.52
 
@@ -46,14 +55,12 @@ delete-alertmanager:
 	podman rm -f alertmanager
 	podman volume prune
 
-create-migration:
-	migrate create -ext sql -dir database/migration -seq $(name)
+create-grafana:
+	podman run --name grafana --hostname grafana -p 3000:3000 -d grafana/grafana-oss:latest
 
-migrate-up:
-	migrate -database ${DATABASE_URL} -path database/migration -verbose up
-
-migrate-down:
-	migrate -database ${DATABASE_URL} -path database/migration -verbose down
+delete-grafana:
+	podman rm -f grafana
+	podman volume prune
 
 generate-dbdocs:
 	dbdocs build database/doc/db.dbml
@@ -75,4 +82,10 @@ generate-mock:
 run-test:
 	go test ./...
 
-.PHONY: create-consul delete-consul proto-generate create-pulsar delete-pulsar create-postgres delete-postgres create-migration migrate-up migrate-down create-jaeger delete-jaeger create-prometheus delete-prometheus create-alertmanager delete-alertmanager generate-dbdocs generate-schema generate-sqlc generate-image generate-mock run-test
+cpu-profiling:
+	go tool pprof cpu.pprof
+
+mem-profiling:
+	go tool pprof mem.pprof
+
+.PHONY: create-consul delete-consul proto-generate create-pulsar delete-pulsar create-postgres delete-postgres create-migration migrate-up migrate-down create-jaeger delete-jaeger create-prometheus delete-prometheus create-alertmanager delete-alertmanager create-grafana delete-grafana generate-dbdocs generate-schema generate-sqlc generate-image generate-mock run-test cpu-profiling mem-profiling
